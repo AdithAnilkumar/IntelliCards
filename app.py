@@ -14,7 +14,7 @@ load_dotenv()
 # ── Import our utilities ───────────────────────────────────────────────
 from utils.database import (
     init_db, create_user, get_user_by_username, get_user_by_id,
-    create_deck, get_decks_by_user, update_deck_card_count,
+    create_deck, get_decks_by_user, update_deck_card_count, delete_deck,
     get_flashcards_by_deck, save_flashcards_bulk,
     save_quiz_result, get_quiz_history,
     update_topic_progress, get_topic_progress,
@@ -407,6 +407,26 @@ def api_decks():
     user_id = session['user_id']
     decks   = get_decks_by_user(user_id)
     return jsonify({'decks': [dict(d) for d in decks]})
+
+
+@app.route('/api/deck/delete/<int:deck_id>', methods=['POST'])
+@login_required
+def api_delete_deck(deck_id):
+    """Delete a deck and return success status."""
+    user_id = session['user_id']
+    from utils.database import get_connection
+    conn = get_connection()
+    deck = conn.execute('SELECT user_id FROM decks WHERE id = ?', (deck_id,)).fetchone()
+    conn.close()
+    
+    if not deck:
+        return jsonify({'error': 'Deck not found'}), 404
+        
+    if deck['user_id'] != user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    delete_deck(deck_id)
+    return jsonify({'success': True})
 
 
 # ══════════════════════════════════════════════════════════════════════

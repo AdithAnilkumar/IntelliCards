@@ -165,6 +165,16 @@ def update_deck_card_count(deck_id, count):
     conn.close()
 
 
+def delete_deck(deck_id):
+    """Delete a deck and all its flashcards and quiz results."""
+    conn = get_connection()
+    conn.execute('DELETE FROM flashcards WHERE deck_id = ?', (deck_id,))
+    conn.execute('DELETE FROM quiz_results WHERE deck_id = ?', (deck_id,))
+    conn.execute('DELETE FROM decks WHERE id = ?', (deck_id,))
+    conn.commit()
+    conn.close()
+
+
 # ═══════════════════════════════════════════════════════════════════════
 #  FLASHCARD HELPERS
 # ═══════════════════════════════════════════════════════════════════════
