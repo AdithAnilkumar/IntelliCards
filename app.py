@@ -275,7 +275,13 @@ def submit_quiz():
     data       = request.get_json()
     user_id    = session['user_id']
     deck_id    = data.get('deck_id')
-    mode       = data.get('mode', 'mcq')
+    raw_mode   = data.get('mode', 'mcq')
+    if raw_mode == 'tf':
+        mode = 'true_false'
+    elif raw_mode == 'fill':
+        mode = 'fill_blank'
+    else:
+        mode = raw_mode
     score      = data.get('score', 0)
     total      = data.get('total', 0)
     time_taken = data.get('time_taken')
