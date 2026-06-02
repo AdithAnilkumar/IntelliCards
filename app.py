@@ -95,12 +95,15 @@ def dashboard():
 def flashcards(deck_id):
     """Flashcard viewer for a specific deck."""
     user  = current_user()
-    cards = get_flashcards_by_deck(deck_id)
     from utils.database import get_connection
     conn = get_connection()
     deck = conn.execute('SELECT * FROM decks WHERE id = ?', (deck_id,)).fetchone()
     conn.close()
-    deck_dict = dict(deck) if deck else {}
+    if not deck:
+        return redirect(url_for('dashboard'))
+    
+    cards = get_flashcards_by_deck(deck_id)
+    deck_dict = dict(deck)
     return render_template('index.html', user=user, cards=cards,
                            deck_id=deck_id, deck=deck_dict, page='flashcards')
 
@@ -114,7 +117,10 @@ def quiz(deck_id):
     conn = get_connection()
     deck = conn.execute('SELECT * FROM decks WHERE id = ?', (deck_id,)).fetchone()
     conn.close()
-    deck_dict = dict(deck) if deck else {}
+    if not deck:
+        return redirect(url_for('dashboard'))
+        
+    deck_dict = dict(deck)
     return render_template('index.html', user=user, deck_id=deck_id, deck=deck_dict, page='quiz')
 
 
