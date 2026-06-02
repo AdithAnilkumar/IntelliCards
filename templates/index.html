@@ -248,6 +248,41 @@
       box-shadow: 0 0 24px rgba(0, 200, 255, 0.4);
     }
 
+    /* Hamburger Menu Button */
+    .nav-toggle {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 22px;
+      height: 16px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      z-index: 110;
+    }
+
+    .nav-toggle span {
+      display: block;
+      width: 100%;
+      height: 2px;
+      background-color: var(--text);
+      border-radius: 2px;
+      transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
+    }
+
+    .nav-toggle.open span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    .nav-toggle.open span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .nav-toggle.open span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
     /* ═══════════════════════════════════════════════
    PAGES
 ═══════════════════════════════════════════════ */
@@ -1598,8 +1633,52 @@
    RESPONSIVE
 ═══════════════════════════════════════════════ */
     @media(max-width:768px) {
+      .desktop-user-section {
+        display: none !important;
+      }
+
+      .mobile-user-section {
+        display: flex !important;
+      }
+
+      .nav-toggle {
+        display: flex !important;
+      }
+
       .nav-links {
-        display: none;
+        display: flex;
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background: rgba(5, 8, 16, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-radius: 24px;
+        padding: 24px 20px;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 105;
+      }
+
+      .nav-links.open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+      }
+
+      .nav-links a {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+        border-radius: 100px;
+        font-size: 14.5px;
       }
 
       .dash-grid {
@@ -1688,7 +1767,7 @@
     <div class="nav-logo" onclick="window.location.href='/'" style="cursor:pointer;">
       <span>✦</span>IntelliCards
     </div>
-    <div class="nav-links">
+    <div class="nav-links" id="navLinks">
       {% if page == 'login' or page == 'signup' %}
       <a href="/">Home</a>
       {% else %}
@@ -1703,16 +1782,38 @@
         onclick="showPage('quiz',this)">Quiz</a>
       {% endif %}
       {% endif %}
+
+      <!-- Mobile-only user action links inside the dropdown -->
+      {% if user %}
+      <div class="mobile-user-section" style="display:none; border-top:1px solid var(--border); margin-top:12px; padding-top:16px; flex-direction:column; align-items:center; gap:12px; width:100%;">
+        <span style="font-size:13px;color:var(--muted);font-family:var(--font-mono);">@{{ user.username }}</span>
+        <a class="nav-cta" href="/logout"
+          style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#ff5050;padding:8px 20px;border-radius:100px;font-size:13px;font-weight:500;width:100%;text-align:center;">Logout</a>
+      </div>
+      {% else %}
+      <div class="mobile-user-section" style="display:none; border-top:1px solid var(--border); margin-top:12px; padding-top:16px; width:100%;">
+        <a class="nav-cta" href="/login" style="width:100%; text-align:center; display:block;">Login →</a>
+      </div>
+      {% endif %}
     </div>
+
+    <!-- Desktop-only user section -->
     {% if user %}
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div class="desktop-user-section" style="display:flex;align-items:center;gap:12px;">
       <span style="font-size:13px;color:var(--muted);font-family:var(--font-mono);">@{{ user.username }}</span>
       <a class="nav-cta" href="/logout"
         style="background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.3);color:#ff5050;padding:8px 20px;border-radius:100px;font-size:13px;font-weight:500;">Logout</a>
     </div>
     {% else %}
-    <a class="nav-cta" href="/login">Login →</a>
+    <a class="nav-cta desktop-user-section" href="/login">Login →</a>
     {% endif %}
+
+    <!-- Hamburger Toggle Menu Button -->
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" onclick="toggleMobileMenu()">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
   </nav>
 
   {% if page == 'login' %}
@@ -2439,10 +2540,27 @@
     let isFlipped = false;
     let activeTopic = 'All Topics';
 
+    function parseDateSafe(dateStr) {
+      if (!dateStr) return new Date();
+      const cleanStr = dateStr.replace(' ', 'T');
+      const hasZ = cleanStr.endsWith('Z');
+      const isoStr = hasZ ? cleanStr : cleanStr + 'Z';
+      const d = new Date(isoStr);
+      return isNaN(d.getTime()) ? new Date() : d;
+    }
+
     // ════════════════════════════════════════════════════
     //  NAV
     // ════════════════════════════════════════════════════
     function showPage(id, linkEl) {
+      // Close mobile menu if open
+      const toggleBtn = document.getElementById('navToggle');
+      const navLinks = document.getElementById('navLinks');
+      if (toggleBtn && toggleBtn.classList.contains('open')) {
+        toggleBtn.classList.remove('open');
+        navLinks.classList.remove('open');
+      }
+
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       const pEl = document.getElementById('page-' + id);
       if (pEl) pEl.classList.add('active');
@@ -2452,6 +2570,15 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       if (id === 'dashboard') renderDashboard();
+    }
+
+    function toggleMobileMenu() {
+      const toggleBtn = document.getElementById('navToggle');
+      const navLinks = document.getElementById('navLinks');
+      if (toggleBtn && navLinks) {
+        toggleBtn.classList.toggle('open');
+        navLinks.classList.toggle('open');
+      }
     }
 
     function scrollToUpload() {
@@ -2968,7 +3095,7 @@
             <div>
               <div style="font-size:11px; font-family:var(--font-mono); color:var(--glow-c); margin-bottom:6px;">${d.topic || 'General'}</div>
               <h4 style="font-family:var(--font-head); font-size:16px; margin-bottom:8px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${d.original_name}</h4>
-              <p style="color:var(--muted); font-size:12px;">${d.card_count} cards · Created ${new Date(d.created_at + 'Z').toLocaleDateString()}</p>
+              <p style="color:var(--muted); font-size:12px;">${d.card_count} cards · Created ${parseDateSafe(d.created_at).toLocaleDateString()}</p>
             </div>
             <div style="display:flex; gap:8px; margin-top:16px; align-items:center;">
               <a href="/flashcards/${d.id}" class="btn-ghost" style="padding:6px 12px; font-size:12px; border-radius:100px; text-align:center; flex:1;">Study</a>
@@ -3042,7 +3169,7 @@
         al.innerHTML = '';
         if (data.quiz_history && data.quiz_history.length > 0) {
           data.quiz_history.forEach(h => {
-            const dateStr = new Date(h.created_at + 'Z').toLocaleDateString();
+            const dateStr = parseDateSafe(h.created_at).toLocaleDateString();
             al.innerHTML += `
           <div class="activity-item">
             <div class="activity-dot purple"></div>
