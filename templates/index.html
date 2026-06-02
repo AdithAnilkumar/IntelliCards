@@ -659,6 +659,33 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
   .hero h1{letter-spacing:-1px;}
   .card-scene{height:280px;}
   .card-face{padding:28px 24px;}
+  
+  /* Stacking hero columns on small screens */
+  .hero {
+    grid-template-columns: 1fr !important;
+    text-align: center !important;
+    padding-top: 120px !important;
+    gap: 30px !important;
+  }
+  .hero-left h1, .hero-sub {
+    text-align: center !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  .hero-btns {
+    justify-content: center !important;
+  }
+  .tech-stack-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .tech-stack-banner div {
+    text-align: center;
+  }
+  .tech-stack-banner > div:last-child {
+    justify-content: center;
+  }
 }
 @media(max-width:480px){
   .dash-grid{grid-template-columns:1fr 1fr;}
@@ -762,28 +789,66 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
  ══════════════════════════════════════════════════ -->
 <div class="page active z1" id="page-landing">
   <!-- Hero -->
-  <section class="hero container">
-    <div class="hero-badge">⚡ GPT-4o Powered · Smart Segmentation</div>
-    <h1>
-      <div class="line1">Learn Smarter,</div>
-      <div class="line2">Not Harder.</div>
-    </h1>
-    <p class="hero-sub">
-      Upload any PDF and IntelliCards instantly generates flashcards, quizzes, and analytics — powered by a 4-level AI segmentation engine.
-    </p>
-    <div class="hero-btns">
-      {% if user %}
-        <button class="btn-primary" onclick="scrollToUpload()">
-          <span>🧠</span> Generate Flashcards
-        </button>
-      {% else %}
-        <button class="btn-primary" onclick="window.location.href='/login'">
-          <span>🧠</span> Get Started
-        </button>
-      {% endif %}
-      {% if user %}
-        <button class="btn-ghost" onclick="showPage('dashboard',null)">View My Decks</button>
-      {% endif %}
+  <section class="hero container" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; text-align: left; align-items: center; min-height: 80vh; padding-top: 130px; padding-bottom: 50px;">
+    <!-- Left Column: Hero Text & Technical Stack Banner -->
+    <div class="hero-left">
+      <div class="hero-badge" style="margin-bottom: 20px;">⚡ GPT-4o Powered · Smart Segmentation</div>
+      <h1 style="font-size: clamp(38px, 5.5vw, 68px); line-height: 1.1; text-align: left; margin-bottom: 20px; font-weight: 800;">
+        <span class="line1" style="background:linear-gradient(135deg,#ffffff 20%,rgba(255,255,255,0.7)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Learn Smarter,</span><br/>
+        <span class="line2" style="background:linear-gradient(135deg,var(--glow-c),var(--glow-p) 60%,#ff6ee7); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Not Harder.</span>
+      </h1>
+      <p class="hero-sub" style="margin: 0 0 32px 0; text-align: left; max-width: 540px; font-size: clamp(14px, 2vw, 17px); line-height: 1.6; color: var(--muted);">
+        Upload any document and instantly generate study flashcards, quizzes, and learning analytics — powered by our hybrid text-parsing pipeline and 4-level segmentation engine.
+      </p>
+      
+      <div class="hero-btns" style="justify-content: flex-start; margin-bottom: 40px; display: flex; gap: 12px; flex-wrap: wrap;">
+        {% if user %}
+          <button class="btn-primary" onclick="scrollToUpload()">
+            <span>🧠</span> Start Generating
+          </button>
+          <button class="btn-ghost" onclick="showPage('dashboard',null)">View Dashboard</button>
+        {% else %}
+          <button class="btn-primary" onclick="window.location.href='/login'">
+            <span>🧠</span> Get Started Free
+          </button>
+          <button class="btn-ghost" onclick="scrollToSandbox()">Try Live Demo</button>
+        {% endif %}
+      </div>
+      
+      <!-- Tech Stack Credentials Banner for Recruiters -->
+      <div class="tech-stack-banner" style="border-top: 1px solid var(--border); padding-top: 24px;">
+        <div style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;">DEVELOPER TECH STACK</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 11px; font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text);">Flask (Python)</span>
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 11px; font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--glow-c);">SQLite3 DB</span>
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 11px; font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--glow-p);">GPT-4o API</span>
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 11px; font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--glow-g);">Vanilla JS / ES6</span>
+          <span style="padding: 6px 12px; border-radius: 6px; font-size: 11px; font-family: var(--font-mono); background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: #ff5050;">ReportLab PDF</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Column: Interactive Floating Card -->
+    <div class="hero-right" style="perspective: 1000px; display: flex; justify-content: center; position: relative;">
+      <div class="card-scene-demo" onclick="flipDemoCard(this)" style="width: 320px; height: 220px; cursor: pointer;">
+        <div class="card-3d-demo" style="width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .6s cubic-bezier(0.23,1,0.32,1); position: relative; border-radius: var(--r-lg);">
+          <!-- Front -->
+          <div class="card-face-demo" style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--r-lg); padding: 28px; display: flex; flex-direction: column; justify-content: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);">
+            <div style="font-family: var(--font-mono); font-size: 9px; color: var(--glow-c); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">✦ Demo Flashcard</div>
+            <div style="font-family: var(--font-head); font-weight: 600; font-size: 18px; line-height: 1.4; color: #fff;">What is an Isoquant in Microeconomics?</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-top: 16px; align-self: flex-start; border: 1px solid rgba(16,240,160,0.3); padding: 2px 8px; border-radius: 100px; color: var(--glow-g);">● Click to Flip</div>
+          </div>
+          <!-- Back -->
+          <div class="card-face-demo card-back-demo" style="position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--r-lg); padding: 28px; display: flex; flex-direction: column; justify-content: center; transform: rotateY(180deg); background: rgba(168,85,247,0.06); border: 1px solid rgba(168,85,247,0.15); backdrop-filter: blur(20px);">
+            <div style="font-family: var(--font-mono); font-size: 9px; color: var(--glow-p); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">✓ Concept Definition</div>
+            <div style="font-size: 13.5px; line-height: 1.5; color: var(--text);">An <strong>isoquant</strong> is a curve showing combinations of inputs (like labor and capital) that yield the <strong>same level of output</strong>.</div>
+            <div style="font-size: 11px; font-family: var(--font-mono); margin-top: 12px; color: var(--glow-c); font-style: italic;">Hint: Iso = Equal, Quant = Quantity</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Background glow effect behind the card -->
+      <div style="position: absolute; width: 250px; height: 150px; background: radial-gradient(circle, rgba(0,200,255,0.2) 0%, transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: -1; filter: blur(30px); pointer-events: none;"></div>
     </div>
   </section>
 
@@ -817,6 +882,100 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
         <button class="btn-primary" style="margin: 0 auto; background:linear-gradient(135deg,var(--glow-p),#ff6ee7); color:#fff; display:inline-flex;">Get Started Now</button>
       </div>
     {% endif %}
+  </section>
+
+  <!-- Recruiter Interactive Sandbox -->
+  <section class="container" id="sandbox-section" style="padding-bottom:80px; scroll-margin-top: 100px;">
+    <div class="section-label">Interactive Sandbox</div>
+    <div class="section-title">Test the Features Instantly</div>
+    <p style="text-align: center; color: var(--muted); max-width: 600px; margin: -30px auto 40px; font-size: 14.5px;">
+      No time to sign up or upload documents? Interact with this live preview sandbox loaded with a mock economics deck.
+    </p>
+    
+    <div class="glass" style="padding: 40px 30px; border-radius: var(--r-lg); background: rgba(255,255,255,0.02); border: 1px solid var(--border);">
+      <!-- Sandbox Tab Selector -->
+      <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+        <button class="topic-chip active" id="sandbox-tab-cards" onclick="switchSandboxTab('cards')">🃏 Try Flashcards</button>
+        <button class="topic-chip" id="sandbox-tab-quiz" onclick="switchSandboxTab('quiz')">🎯 Try Practice Quiz</button>
+        <button class="topic-chip" id="sandbox-tab-chart" onclick="switchSandboxTab('chart')">📈 View Analytics Demo</button>
+      </div>
+      
+      <!-- Tab 1: Flashcards Sandbox -->
+      <div id="sandbox-content-cards" style="display: block; animation: fadeUp .4s ease;">
+        <div style="max-width: 600px; margin: 0 auto;">
+          <div class="card-scene" onclick="flipSandboxCard()" style="height: 240px; cursor: pointer; margin-bottom: 24px;">
+            <div class="card-3d" id="sandboxCard3d" style="width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .6s cubic-bezier(0.23,1,0.32,1); position: relative; border-radius: var(--r-lg);">
+              <!-- Front -->
+              <div class="card-face" style="box-shadow: none;">
+                <div class="card-label">❓ Question</div>
+                <div class="card-question" id="sandboxCardQ" style="font-size: 19px; line-height: 1.4;">What is the Law of Diminishing Marginal Returns?</div>
+                <span class="difficulty-badge diff-medium">● Medium</span>
+              </div>
+              <!-- Back -->
+              <div class="card-face card-back" style="box-shadow: none;">
+                <div class="card-label">✅ Answer</div>
+                <div class="card-answer" id="sandboxCardA" style="font-size: 14.5px; line-height: 1.6; color: var(--text);">As more units of a variable input (e.g., labor) are added to fixed inputs (e.g., land), the marginal output generated will eventually decrease.</div>
+                <div class="card-hint" id="sandboxCardHint" style="padding: 10px 14px; margin-bottom: 0; font-size: 12px; margin-top: 12px;">💡 Hint: Think about adding too many cooks in a single kitchen.</div>
+              </div>
+            </div>
+          </div>
+          <div class="flip-hint" style="margin-bottom: 24px;">Click card to flip</div>
+          <div class="card-nav">
+            <button class="card-nav-btn" onclick="prevSandboxCard()">←</button>
+            <button class="card-nav-btn" onclick="flipSandboxCard()">↕</button>
+            <button class="card-nav-btn" onclick="nextSandboxCard()">→</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 2: Quiz Sandbox -->
+      <div id="sandbox-content-quiz" style="display: none; animation: fadeUp .4s ease;">
+        <div style="max-width: 580px; margin: 0 auto; text-align: left;">
+          <div class="quiz-question-card glass" style="margin-bottom: 20px; padding: 24px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+            <div class="quiz-q-num" id="sandboxQuizQNum">Question 1 of 3</div>
+            <div class="quiz-q-text" id="sandboxQuizQText" style="font-size: 18px; line-height: 1.4; font-weight: 600;">Which of the following describes an Isoquant Map?</div>
+          </div>
+          <div class="quiz-options" id="sandboxQuizOptions">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; min-height: 48px;">
+            <div id="sandboxQuizFeedback" style="font-family: var(--font-mono); font-size: 13px; font-weight: 500;"></div>
+            <button class="btn-next" id="sandboxQuizNextBtn" onclick="nextSandboxQuiz()" style="display: none;">Next Q →</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Tab 3: Chart Sandbox -->
+      <div id="sandbox-content-chart" style="display: none; animation: fadeUp .4s ease;">
+        <div class="dash-lower" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; text-align: left; margin-bottom: 0;">
+          <div class="chart-card glass" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 24px;">
+            <h3 style="font-size: 14px; margin-bottom: 16px; font-weight: 600;">Practice Mastery Overview</h3>
+            <div class="chart-wrap" style="height: 160px;">
+              <div class="bar-chart">
+                <div class="bar-wrap"><div class="bar" style="height: 110px;"></div><div class="bar-lbl">Mon</div></div>
+                <div class="bar-wrap"><div class="bar purple" style="height: 80px;"></div><div class="bar-lbl">Tue</div></div>
+                <div class="bar-wrap"><div class="bar" style="height: 130px;"></div><div class="bar-lbl">Wed</div></div>
+                <div class="bar-wrap"><div class="bar purple" style="height: 155px;"></div><div class="bar-lbl">Thu</div></div>
+                <div class="bar-wrap"><div class="bar" style="height: 100px;"></div><div class="bar-lbl">Fri</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card glass" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 24px;">
+            <h3 style="font-size: 14px; margin-bottom: 16px; font-weight: 600;">Weak Topics Diagnosed</h3>
+            <div class="weak-list">
+              <div class="weak-item" style="margin-bottom: 12px;">
+                <div class="weak-item-header" style="margin-bottom: 4px;"><span class="weak-name" style="font-size: 12.5px;">Production Costs</span><span class="weak-pct" style="font-size: 11px;">45%</span></div>
+                <div class="weak-bar"><div class="weak-fill" style="width: 45%;"></div></div>
+              </div>
+              <div class="weak-item">
+                <div class="weak-item-header" style="margin-bottom: 4px;"><span class="weak-name" style="font-size: 12.5px;">Consumer Equilibrium</span><span class="weak-pct" style="font-size: 11px;">60%</span></div>
+                <div class="weak-bar"><div class="weak-fill" style="width: 60%; background: linear-gradient(90deg, #ff8f50, #ffd050);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- Feature grid -->
@@ -1764,6 +1923,180 @@ async function renderDashboard() {
 }
 
 // ════════════════════════════════════════════════════
+//  RECRUITER INTERACTIVE SANDBOX CONTROLLER
+// ════════════════════════════════════════════════════
+function flipDemoCard(el) {
+  const card3d = el.querySelector('.card-3d-demo');
+  if (card3d) card3d.style.transform = card3d.style.transform === 'rotateY(180deg)' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+}
+
+function scrollToSandbox() {
+  const sandboxEl = document.getElementById('sandbox-section');
+  if (sandboxEl) sandboxEl.scrollIntoView({ behavior: 'smooth' });
+}
+
+function switchSandboxTab(tabName) {
+  document.getElementById('sandbox-tab-cards').classList.remove('active');
+  document.getElementById('sandbox-tab-quiz').classList.remove('active');
+  document.getElementById('sandbox-tab-chart').classList.remove('active');
+  document.getElementById('sandbox-tab-' + tabName).classList.add('active');
+  
+  document.getElementById('sandbox-content-cards').style.display = tabName === 'cards' ? 'block' : 'none';
+  document.getElementById('sandbox-content-quiz').style.display = tabName === 'quiz' ? 'block' : 'none';
+  document.getElementById('sandbox-content-chart').style.display = tabName === 'chart' ? 'block' : 'none';
+}
+
+// Sandbox Cards Data
+const sandboxCards = [
+  {
+    q: "What is the Law of Diminishing Marginal Returns?",
+    a: "As more units of a variable input (e.g., labor) are added to fixed inputs (e.g., land), the marginal output generated will eventually decrease.",
+    hint: "💡 Hint: Think about adding too many cooks in a single kitchen."
+  },
+  {
+    q: "What are the characteristics of Isoquants?",
+    a: "Isoquants are negatively sloped, convex to the origin, do not intersect each other, and higher curves represent higher output levels.",
+    hint: "💡 Hint: They share similar characteristics with consumer indifference curves."
+  },
+  {
+    q: "What is the Expansion Path in production theory?",
+    a: "It is the locus of cost-minimizing input combinations as the scale of production expands, determined by points of tangency between isoquants and isocost lines.",
+    hint: "💡 Hint: It shows the optimal growth path for a firm's resource inputs."
+  }
+];
+let sandboxCardIdx = 0;
+let sandboxFlipped = false;
+
+function flipSandboxCard() {
+  const card3d = document.getElementById('sandboxCard3d');
+  if (card3d) {
+    card3d.classList.toggle('flipped');
+    sandboxFlipped = !sandboxFlipped;
+  }
+}
+
+function renderSandboxCard() {
+  if (sandboxFlipped) {
+    document.getElementById('sandboxCard3d').classList.remove('flipped');
+    sandboxFlipped = false;
+  }
+  const c = sandboxCards[sandboxCardIdx];
+  setTimeout(() => {
+    document.getElementById('sandboxCardQ').textContent = c.q;
+    document.getElementById('sandboxCardA').textContent = c.a;
+    document.getElementById('sandboxCardHint').textContent = c.hint;
+  }, 150);
+}
+
+function nextSandboxCard() {
+  sandboxCardIdx = (sandboxCardIdx + 1) % sandboxCards.length;
+  renderSandboxCard();
+}
+
+function prevSandboxCard() {
+  sandboxCardIdx = (sandboxCardIdx - 1 + sandboxCards.length) % sandboxCards.length;
+  renderSandboxCard();
+}
+
+// Sandbox Quiz Data
+const sandboxQuiz = [
+  {
+    q: "Which of the following describes an Isoquant Map?",
+    opts: [
+      "A set of isoquants representing different levels of output",
+      "A curve showing the budget constraints of production",
+      "A graph showing the path of consumer satisfaction",
+      "The rate at which a firm replaces capital with labor"
+    ],
+    correct: 0
+  },
+  {
+    q: "When Marginal Product (MP) is greater than Average Product (AP), what happens to AP?",
+    opts: [
+      "Average Product decreases",
+      "Average Product remains constant",
+      "Average Product increases",
+      "Average Product becomes negative"
+    ],
+    correct: 2
+  },
+  {
+    q: "At the point of producer equilibrium, the slope of the isoquant equals:",
+    opts: [
+      "The marginal rate of technical substitution (MRTS)",
+      "The slope of the isocost line",
+      "The ratio of input prices (w/r)",
+      "All of the above options are correct"
+    ],
+    correct: 3
+  }
+];
+let sandboxQuizIdx = 0;
+let sandboxQuizAnswered = false;
+
+function renderSandboxQuiz() {
+  sandboxQuizAnswered = false;
+  document.getElementById('sandboxQuizNextBtn').style.display = 'none';
+  document.getElementById('sandboxQuizFeedback').textContent = '';
+  
+  const q = sandboxQuiz[sandboxQuizIdx];
+  document.getElementById('sandboxQuizQNum').textContent = `Question ${sandboxQuizIdx + 1} of ${sandboxQuiz.length}`;
+  document.getElementById('sandboxQuizQText').textContent = q.q;
+  
+  const container = document.getElementById('sandboxQuizOptions');
+  container.innerHTML = '';
+  
+  const letters = ['A', 'B', 'C', 'D'];
+  q.opts.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.style.width = '100%';
+    btn.onclick = () => selectSandboxQuizAnswer(btn, idx === q.correct);
+    
+    const span = document.createElement('span');
+    span.className = 'opt-letter';
+    span.textContent = letters[idx];
+    
+    btn.appendChild(span);
+    btn.appendChild(document.createTextNode(opt));
+    container.appendChild(btn);
+  });
+}
+
+function selectSandboxQuizAnswer(btn, isCorrect) {
+  if (sandboxQuizAnswered) return;
+  sandboxQuizAnswered = true;
+  
+  document.querySelectorAll('#sandboxQuizOptions .quiz-option').forEach(o => o.style.pointerEvents = 'none');
+  
+  if (isCorrect) {
+    btn.classList.add('correct');
+    btn.querySelector('.opt-letter').textContent = '✓';
+    document.getElementById('sandboxQuizFeedback').innerHTML = "<span style='color: #10f0a0;'>✓ Correct! Great job!</span>";
+  } else {
+    btn.classList.add('wrong');
+    btn.querySelector('.opt-letter').textContent = '✗';
+    document.getElementById('sandboxQuizFeedback').innerHTML = "<span style='color: #ff5050;'>✗ Incorrect. Review this topic!</span>";
+    
+    const q = sandboxQuiz[sandboxQuizIdx];
+    document.querySelectorAll('#sandboxQuizOptions .quiz-option')[q.correct].classList.add('correct');
+    document.querySelectorAll('#sandboxQuizOptions .quiz-option')[q.correct].querySelector('.opt-letter').textContent = '✓';
+  }
+  
+  document.getElementById('sandboxQuizNextBtn').style.display = 'block';
+}
+
+function nextSandboxQuiz() {
+  sandboxQuizIdx++;
+  if (sandboxQuizIdx < sandboxQuiz.length) {
+    renderSandboxQuiz();
+  } else {
+    sandboxQuizIdx = 0;
+    renderSandboxQuiz();
+  }
+}
+
+// ════════════════════════════════════════════════════
 //  BOOTSTRAP APP
 // ════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -1779,6 +2112,10 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     // Landing
     renderCard();
+    
+    // Initialize Sandbox contents
+    renderSandboxCard();
+    renderSandboxQuiz();
   }
 });
 </script>

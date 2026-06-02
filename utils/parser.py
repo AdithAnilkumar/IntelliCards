@@ -1,6 +1,43 @@
 import os
 import pypdf
 import docx
+import re
+
+def clean_extracted_text(text):
+    if not text:
+        return ""
+    
+    # 1. Merge spaced-out letters (e.g. "I s o q u a n t" -> "Isoquant")
+    # Must be done BEFORE consolidating spaces to preserve double spaces as word boundaries.
+    text = re.sub(r'\b[a-zA-Z](?: [a-zA-Z])+\b', lambda m: m.group(0).replace(' ', ''), text)
+
+    # 2. Clean multiple spaces/tabs
+    text = re.sub(r'[ \t]+', ' ', text)
+    
+    # 3. OCR and typing corrections
+    corrections = [
+        (r'\boutoout\b', 'output'),
+        (r'\boutout\b', 'output'),
+        (r'\boutut\b', 'output'),
+        (r'\boutoout(\d+)\b', r'output \1'),
+        (r'\boutout(\d+)\b', r'output \1'),
+        (r'\boutut(\d+)\b', r'output \1'),
+        (r'\bproccess\b', 'process'),
+        (r'\bproccesses\b', 'processes'),
+        (r'\bproceses\b', 'processes'),
+        (r'\bteh\b', 'the'),
+        (r'\btehm\b', 'them'),
+        (r'\bsamee\b', 'same'),
+        (r'\binteresect\b', 'intersect'),
+        (r'\binteresects\b', 'intersects'),
+        (r'\binteresecing\b', 'intersecting'),
+        (r'\binteresecting\b', 'intersecting'),
+        (r'\bgives combinations\b', 'given combinations'),
+    ]
+    for pattern, replacement in corrections:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    return text
+
 
 def parse_file(file_path):
     """
@@ -8,18 +45,28 @@ def parse_file(file_path):
     and metadata about headings/bold lines.
     """
     ext = os.path.splitext(file_path)[1].lower()
+    res = None
     if ext == '.pdf':
-        return parse_pdf(file_path)
+        res = parse_pdf(file_path)
     elif ext == '.docx':
-        return parse_docx(file_path)
+        res = parse_docx(file_path)
     elif ext in ('.txt', '.md'):
-        return parse_txt(file_path)
+        res = parse_txt(file_path)
     else:
         # Fallback to text parsing
         try:
-            return parse_txt(file_path)
+            res = parse_txt(file_path)
         except Exception:
             raise ValueError(f"Unsupported file format: {ext}")
+            
+    if res:
+        res['text'] = clean_extracted_text(res['text'])
+        for page in res.get('pages', []):
+            page['text'] = clean_extracted_text(page['text'])
+        res['bold_lines'] = [clean_extracted_text(b) for b in res.get('bold_lines', []) if b.strip()]
+        res['headings'] = [clean_extracted_text(h) for h in res.get('headings', []) if h.strip()]
+        
+    return res
 
 
 def parse_pdf(file_path):
@@ -33,58 +80,27 @@ def parse_pdf(file_path):
         page_num = idx + 1
         txt = ""
         try:
-            line_elements = []
+            # 1. Extract clean layout-preserved text directly using pypdf's standard layout engine
+            txt = page.extract_text() or ""
             
+            # 2. Use visitor only to collect metadata for bold lines and headings
             def visitor(text, cm, tm, font_dict, font_size):
                 if not text.strip():
+                    return
+                # Ignore duplicate container blocks (often representing entire page layers)
+                if len(text) > 200 or '\n' in text:
                     return
                 font_name = ""
                 if font_dict and '/BaseFont' in font_dict:
                     font_name = str(font_dict['/BaseFont'])
                 is_bold = "bold" in font_name.lower() or "heavy" in font_name.lower() or "black" in font_name.lower()
-                y = tm[5]
-                line_elements.append((y, font_size, is_bold, text))
+                clean_t = text.strip()
+                if is_bold and len(clean_t) < 100:
+                    bold_lines.append(clean_t)
+                if font_size > 13.0 and len(clean_t) < 100:
+                    headings.append(clean_t)
             
             page.extract_text(visitor_text=visitor)
-            
-            if line_elements:
-                # Group elements by Y coordinate (top down)
-                line_elements.sort(key=lambda x: -x[0])
-                grouped_lines = []
-                current_y = None
-                current_line = []
-                
-                for y, font_size, is_bold, text in line_elements:
-                    if current_y is None:
-                        current_y = y
-                        current_line = [(font_size, is_bold, text)]
-                    elif abs(y - current_y) <= 4:
-                        current_line.append((font_size, is_bold, text))
-                    else:
-                        grouped_lines.append(current_line)
-                        current_y = y
-                        current_line = [(font_size, is_bold, text)]
-                if current_line:
-                    grouped_lines.append(current_line)
-                
-                page_lines_text = []
-                for line in grouped_lines:
-                    line_text = "".join(part[2] for part in line).strip()
-                    if line_text:
-                        page_lines_text.append(line_text)
-                        
-                        # Heuristic: line all bold or large font size
-                        all_bold = all(part[1] for part in line)
-                        max_size = max(part[0] for part in line)
-                        
-                        if all_bold and len(line_text) < 100:
-                            bold_lines.append(line_text)
-                        if max_size > 13.0 and len(line_text) < 100:
-                            headings.append(line_text)
-                
-                txt = "\n".join(page_lines_text)
-            else:
-                txt = page.extract_text() or ""
         except Exception:
             txt = page.extract_text() or ""
             

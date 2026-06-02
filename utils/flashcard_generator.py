@@ -27,8 +27,6 @@ def generate_flashcards_ai(segments, api_key):
     """
     all_cards = []
     
-    # We will process segments in batches or individually to stay within limits
-    # and keep mapping to specific topics. Let's do them individually.
     for seg in segments:
         topic = seg['topic']
         content = seg['content']
@@ -80,7 +78,6 @@ def generate_flashcards_ai(segments, api_key):
             cards_json = json.loads(raw_content)
             
             for card in cards_json.get("flashcards", []):
-                # Ensure fields are present and valid
                 all_cards.append({
                     "question": card.get("question", "N/A"),
                     "answer": card.get("answer", "N/A"),
@@ -99,7 +96,7 @@ def generate_flashcards_ai(segments, api_key):
 def generate_flashcards_fallback(segments):
     """
     Rule-based fallback flashcard generator. Analyzes text structure,
-    colons, and definition keywords to generate cards.
+    colons, and definition keywords to generate high-quality conceptual cards.
     """
     all_cards = []
     
@@ -116,10 +113,16 @@ def generate_flashcards_fallback(segments):
                 continue
                 
             # Pattern 1: Colon split (e.g. "Term: Definition")
-            if ":" in para and 10 < para.find(":") < 60:
+            if ":" in para and 3 < para.find(":") < 60:
                 parts = para.split(":", 1)
                 term = parts[0].strip()
                 defn = parts[1].strip()
+                
+                # Normalize capitalization and period
+                if defn and not defn[0].isupper():
+                    defn = defn[0].upper() + defn[1:]
+                if defn and not defn.endswith('.'):
+                    defn += '.'
                 
                 # Check for example text in the definition
                 example = ""
@@ -127,63 +130,111 @@ def generate_flashcards_fallback(segments):
                 if ex_match:
                     example = ex_match.group(0).strip()
                     
+                clean_term = term.replace('_', ' ').replace('-', ' ').strip()
+                
                 all_cards.append({
-                    "question": f"What is the definition of '{term}' in the context of {topic}?",
+                    "question": f"Describe the concept and definition of '{clean_term}' as it applies to {topic}.",
                     "answer": defn,
                     "difficulty": "easy" if len(defn) < 100 else "medium",
-                    "hint": f"It is related to {term.lower()}.",
-                    "example": example or f"// Example of {term}",
+                    "hint": f"Think about how '{clean_term.lower()}' functions or its primary purpose.",
+                    "example": example or f"// Application of {clean_term}: In practice, this represents a core element of {topic}.",
                     "topic": topic
                 })
                 continue
                 
-            # Pattern 2: Definition keywords ("is defined as", "refers to", "is a type of")
+            # Pattern 2: Definition keywords ("is defined as", "refers to", "is a", "are defined as", "means")
             keywords = ["is defined as", "refers to", "is a", "are defined as", "means"]
             matched_keyword = None
+            kw_idx = -1
             for kw in keywords:
-                if kw in para.lower():
-                    # Ensure keyword isn't at the very start or end
-                    kw_idx = para.lower().find(kw)
-                    if 5 < kw_idx < len(para) - 15:
-                        matched_keyword = kw
-                        break
+                idx = para.lower().find(kw)
+                if 2 <= idx < len(para) - 10:  # Allow short terms (>=2 characters)
+                    matched_keyword = kw
+                    kw_idx = idx
+                    break
                         
             if matched_keyword:
-                kw_idx = para.lower().find(matched_keyword)
                 term = para[:kw_idx].strip()
                 defn = para[kw_idx:].strip()
+                
+                # Normalize full sentence format
+                full_sentence = f"{term} {defn}"
+                if full_sentence and not full_sentence[0].isupper():
+                    full_sentence = full_sentence[0].upper() + full_sentence[1:]
+                if full_sentence and not full_sentence.endswith('.'):
+                    full_sentence += '.'
                 
                 example = ""
                 ex_match = re.search(r'(?:for example|e\.g\.|example:)(.*?)(?:\.|$)', defn, re.IGNORECASE)
                 if ex_match:
                     example = ex_match.group(0).strip()
-                    
+                
+                # Formulate distinct question types based on the keyword
+                clean_term = term.replace('_', ' ').replace('-', ' ').strip()
+                if matched_keyword == "means":
+                    question = f"What is the literal meaning and significance of the term '{clean_term}' in the context of {topic}?"
+                elif matched_keyword in ("refers to", "is defined as"):
+                    question = f"What does the term '{clean_term}' refer to in {topic}, and how is it defined?"
+                else:
+                    question = f"Explain the role and definition of '{clean_term}' within the context of {topic}."
+
                 all_cards.append({
-                    "question": f"Explain '{term}' as it relates to {topic}.",
-                    "answer": defn,
+                    "question": question,
+                    "answer": full_sentence,
                     "difficulty": "medium",
-                    "hint": f"Consider the term '{term.lower()}'.",
-                    "example": example or f"// Concept application for {term}",
+                    "hint": f"Consider the term '{clean_term.lower()}' and its literal description.",
+                    "example": example or f"// Real-world application of {clean_term} in {topic}",
                     "topic": topic
                 })
                 continue
                 
             # Pattern 3: Question from general paragraph
-            # We just split by sentence, make the first sentence the core question prompt
             sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', para) if s.strip()]
             if sentences:
                 q_term = sentences[0]
-                if len(q_term) > 10 and len(q_term) < 100:
-                    answer = " ".join(sentences[1:]) if len(sentences) > 1 else para
-                    all_cards.append({
-                        "question": f"Regarding {topic}: {q_term}",
-                        "answer": answer,
-                        "difficulty": "hard",
-                        "hint": f"Focuses on: {q_term[:30]}...",
-                        "example": f"// Application of {topic} concept",
-                        "topic": topic
-                    })
-                    
+                if len(q_term) > 10 and len(q_term) < 150:
+                    if len(sentences) > 1:
+                        # Multi-sentence paragraph
+                        answer = " ".join(sentences[1:])
+                        all_cards.append({
+                            "question": f"Regarding {topic}: {q_term} Explain the details or implications of this statement.",
+                            "answer": answer,
+                            "difficulty": "hard",
+                            "hint": f"Focuses on the core concept: '{q_term[:30]}...'",
+                            "example": f"// Case study: Explains how this principle operates in {topic}.",
+                            "topic": topic
+                        })
+                    else:
+                        # Single-sentence paragraph: Check for conditional rules
+                        cond_match = re.match(r'^(When|If) (.*?), (.*?)(?:\.|$)', q_term, re.IGNORECASE)
+                        if cond_match:
+                            word = cond_match.group(1).capitalize() # "When" or "If"
+                            x_part = cond_match.group(2).strip()
+                            y_part = cond_match.group(3).strip()
+                            
+                            # Standardize first letter of y_part
+                            if y_part:
+                                y_part = y_part[0].lower() + y_part[1:]
+                                
+                            all_cards.append({
+                                "question": f"Regarding {topic}: What is the effect on '{y_part}' {word.lower()} {x_part}?",
+                                "answer": q_term,
+                                "difficulty": "medium",
+                                "hint": f"Think about the causal link: {x_part} leads to {y_part}.",
+                                "example": f"// Relationship rule: {x_part} => {y_part}",
+                                "topic": topic
+                            })
+                        else:
+                            # Standard general single-sentence fallback
+                            all_cards.append({
+                                "question": f"Discuss the core concept and implications of this statement in '{topic}':\n\"{q_term}\"",
+                                "answer": f"In the context of {topic}, this statement outlines that: {q_term}",
+                                "difficulty": "medium",
+                                "hint": "Think about the broader context of this topic.",
+                                "example": f"// Key takeaway for {topic}",
+                                "topic": topic
+                            })
+                            
     # Ensure we return at least some cards
     if not all_cards:
         # Absolute fallback if no patterns matched
