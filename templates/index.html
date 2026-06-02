@@ -1295,8 +1295,11 @@ function showToast(msg) {
 //  FLASHCARDS VIEWER & CONTROLLER
 // ════════════════════════════════════════════════════
 function renderCard() {
+  const questionEl = document.getElementById('cardQuestion');
+  if (!questionEl) return;
+
   if (!filteredCards.length) {
-    document.getElementById('cardQuestion').textContent = "No flashcards available.";
+    questionEl.textContent = "No flashcards available.";
     document.getElementById('cardAnswer').textContent = "Generate cards first.";
     document.getElementById('cardCounter').textContent = "0 / 0";
     document.getElementById('prevBtn').disabled = true;
@@ -1305,7 +1308,7 @@ function renderCard() {
   }
   
   const c = filteredCards[currentCard];
-  document.getElementById('cardQuestion').textContent = c.question;
+  questionEl.textContent = c.question;
   document.getElementById('cardAnswer').textContent   = c.answer;
   
   const hintEl = document.getElementById('cardHint');
@@ -1626,6 +1629,9 @@ function retryQuiz() {
 let dashRendered = false;
 
 async function renderDashboard() {
+  const dl = document.getElementById('decksList');
+  if (!dl) return;
+  
   if (dashRendered) return;
   
   try {
